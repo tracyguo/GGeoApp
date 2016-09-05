@@ -1,0 +1,3 @@
+*.jar
+config.properties
+client_secret.json
