@@ -8,8 +8,8 @@
 </head>
 <body>
 <h3>Your file has been uploaded!</h3>
-<a href="${spreadsheetURL}" target="_blank">Google Spreadsheet Link</a>
+<a href="${spreadsheetURL}" target="_blank">Go to my spreadsheet!</a>
 <br/><br/>
-<a href="upload">Back to upload portal</a>
+<a href="upload">Get me back to upload portal!</a>
 </body>
 </html>

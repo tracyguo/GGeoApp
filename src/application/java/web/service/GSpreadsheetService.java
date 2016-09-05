@@ -1,5 +1,7 @@
 /**
-* This class read, create and update google spreadsheet
+* This class defines basic google spreadsheet operations service
+* 
+* including authorize, create, read, update
 *
 * @author  Tracy Guo
 * @since   9/4/2016
@@ -25,8 +27,10 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.Permission;
 import com.google.api.services.sheets.v4.Sheets;
-import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.BatchUpdateValuesRequest;
 import com.google.api.services.sheets.v4.model.Spreadsheet;
 import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
@@ -53,65 +57,78 @@ public class GSpreadsheetService {
 	private static HttpTransport HTTP_TRANSPORT;
 
 	private static Sheets service;
+	private static Drive drive_service;
+	private static Credential credential;
 
-	private static final List<String> SCOPES = Arrays.asList(SheetsScopes.SPREADSHEETS);
+	private static final List<String> DRIVE_SCOPES = Arrays.asList(DriveScopes.DRIVE);
 
 	static {
 		try {
 			HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
 			DATA_STORE_FACTORY = new FileDataStoreFactory(DATA_STORE_DIR);
+			drive_service = getDriveService();
 			service = getSheetsService();
 		} catch (Throwable t) {
 			t.printStackTrace();
 			System.exit(1);
 		}
 	}
+	
+    /**
+     * Creates an authorized Credential object.
+     * @return an authorized Credential object.
+     * @throws IOException
+     */
+    public static Credential authorize_drive() throws IOException {
+        // Load client secrets.
+        InputStream in =
+        		GSpreadsheetService.class.getResourceAsStream("/client_secret.json");
+        GoogleClientSecrets clientSecrets =
+            GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+
+        // Build flow and trigger user authorization request.
+        GoogleAuthorizationCodeFlow flow =
+                new GoogleAuthorizationCodeFlow.Builder(
+                        HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, DRIVE_SCOPES)
+                .setDataStoreFactory(DATA_STORE_FACTORY)
+                .setAccessType("offline")
+                .build();
+        Credential credential = new AuthorizationCodeInstalledApp(
+            flow, new LocalServerReceiver()).authorize("user");
+        System.out.println(
+                "Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
+        return credential;
+    }
 
 	/**
-	 * Creates an authorized Credential object.
+	 * Build and return an authorized Drive client service.
 	 * 
-	 * @return an authorized Credential object.
+	 * @return an authorized Drive client service
 	 * @throws IOException
 	 */
-	public static Credential authorize() throws IOException {
-		// Load client secrets.
-		InputStream in = GSpreadsheetService.class.getResourceAsStream("/client_secret.json");
-		GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
-		// Build flow and trigger user authorization request.
-		GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY,
-				clientSecrets, SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).setAccessType("offline").build();
-		Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
-		System.out.println("Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
-		return credential;
+	public static Drive getDriveService() throws IOException {
+		credential = authorize_drive();
+		return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build();
 	}
-
+	
 	/**
 	 * Build and return an authorized Sheets API client service.
 	 * 
 	 * @return an authorized Sheets API client service
 	 * @throws IOException
 	 */
-	public static Sheets getSheetsService() {
-		Credential credential;
-		try {
-			credential = authorize();
-
-			return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME)
-					.build();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
+	public static Sheets getSheetsService() throws IOException {
+		return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME)
+				.build();
 	}
+
 
 	public static Map<String, Integer> getSheetColumnToIndexMap() {
 		Map<String, Integer> sheetColumnToIndexMap = new HashMap<String, Integer>();
 		sheetColumnToIndexMap.put("streetaddress",
 				Integer.valueOf(ConfigLoader.getInstance().getProperty("streetaddress")));
 		sheetColumnToIndexMap.put("city", Integer.valueOf(ConfigLoader.getInstance().getProperty("city")));
-		sheetColumnToIndexMap.put("postalcode",
-				Integer.valueOf(ConfigLoader.getInstance().getProperty("postalcode")));
+		sheetColumnToIndexMap.put("postalcode", Integer.valueOf(ConfigLoader.getInstance().getProperty("postalcode")));
 		sheetColumnToIndexMap.put("state", Integer.valueOf(ConfigLoader.getInstance().getProperty("state")));
 		sheetColumnToIndexMap.put("country", Integer.valueOf(ConfigLoader.getInstance().getProperty("country")));
 		return sheetColumnToIndexMap;
@@ -194,9 +211,10 @@ public class GSpreadsheetService {
 			System.out.println("theResponse=" + spreadsheet);
 
 			String spreadsheetId = spreadsheet.getSpreadsheetId();
+			insertPermission(drive_service, spreadsheetId);
+
 			GSpreadsheetService sheetService = new GSpreadsheetService();
 			sheetService.updateSpreadsheet(spreadsheetId, dataList, "Sheet1");
-
 			return spreadsheetId;
 
 		} catch (IOException e) {
@@ -207,6 +225,15 @@ public class GSpreadsheetService {
 			return null;
 		}
 
+	}
+
+	private Permission insertPermission(Drive service, String fileId) throws Exception {
+		Permission newPermission = new Permission();
+		newPermission.setType("anyone");
+		newPermission.setRole("reader");
+		newPermission.setValue("");
+		newPermission.setWithLink(true);
+		return service.permissions().insert(fileId, newPermission).execute();
 	}
 
 }

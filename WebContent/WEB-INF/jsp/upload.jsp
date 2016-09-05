@@ -10,6 +10,7 @@
 <form method="post" action="submit" enctype="multipart/form-data">
 Select file to upload:
 <input type="file" name="file" id="fileChooser"/><br/><br/>
+Not sure about file format? Click <a href="${sampleSpreadSheetURL}" target="_blank">Here</a><br/><br/>
 <input type="submit" value="Submit" />
 </form>
 </body>

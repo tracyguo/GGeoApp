@@ -27,6 +27,7 @@ public class GGeoController {
 
 	@RequestMapping(value = "/upload", method = RequestMethod.GET)
 	public void getFile(ModelMap model) {
+		model.addAttribute("sampleSpreadSheetURL", ConfigLoader.getInstance().getProperty("spreadsheet_base_url")+ConfigLoader.getInstance().getProperty("spreadsheet_id"));
 		System.out.println("In GGeopApp");
 	}
 

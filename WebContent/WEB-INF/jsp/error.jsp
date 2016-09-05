@@ -9,5 +9,5 @@
 <body>
 <h3>There is an error in processing the file. Please verify the spreadsheet format.</h3>
 </body>
-<a href="upload">Back to upload portal</a>
+<a href="upload">Get me back to upload portal!</a>
 </html>

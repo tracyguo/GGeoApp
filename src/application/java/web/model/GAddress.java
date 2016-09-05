@@ -1,6 +1,7 @@
 /**
-* model
+* Model Class 
 * Name: GAddress
+* Description: An google spreadsheet entry which includes address info
 *
 * @author  Tracy Guo
 * @since   9/4/2016
