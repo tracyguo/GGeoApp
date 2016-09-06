@@ -100,20 +100,11 @@ public class GAddressProcessorService {
 	 * @return whether the data is valid
 	 */
 	public static boolean dataValidator(List<List<Object>> dataList) {
-		for (int i = 0; i < dataList.size(); i++) {
-			List<Object> valueList = dataList.get(i);
-			if (i == 0) {
-				// the input data list columns must match column names in config
-				// file
-				String columnsNameStr = ConfigLoader.getInstance().getProperty("columns");
-				List<String> columnList = new ArrayList<String>(Arrays.asList(columnsNameStr.split(",")));
-				boolean listIsSame = columnList.equals(valueList);
-				if (!listIsSame) {
-					return false;
-				}
-			}
-		}
-		return true;
+		List<Object> valueList = dataList.get(0);
+		// input data list columns must match column names in config file
+		String columnsNameStr = ConfigLoader.getInstance().getProperty("columns");
+		List<String> columnList = new ArrayList<String>(Arrays.asList(columnsNameStr.split(",")));
+		return columnList.equals(valueList);
 	}
 
 	public static void main(String[] args) {
