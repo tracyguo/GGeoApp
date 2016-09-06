@@ -19,7 +19,7 @@
 			<a href="${spreadsheetURL}" target="_blank">Go to my spreadsheet!</a>
 		</p>
 		<p>
-			<a href="upload">Get me back to upload portal!</a>
+			<a href="upload">Get me back to upload portal</a>
 		</p>
 	</div>
 </body>

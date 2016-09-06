@@ -14,11 +14,11 @@
 </head>
 <body>
 	<div class="container">
-		<h3>There is an error in processing the file. Please verify the
-			spreadsheet format.</h3>
-		<a href="upload">Get me back to upload portal!</a>
+		<h3>There is an error in processing the file. Please make sure
+			you uploaded the spreadsheet and verify the format.</h3>
+		<a href="upload">Get me back to upload portal</a>
 	</div>
-	
+
 </body>
 
 </html>
