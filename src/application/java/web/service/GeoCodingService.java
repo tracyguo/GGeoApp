@@ -38,7 +38,7 @@ public class GeoCodingService {
 
 			// read from the URL
 			Scanner scan = new Scanner(url.openStream());
-			String str = new String();
+			String str = "";
 			while (scan.hasNext())
 				str += scan.nextLine();
 			scan.close();

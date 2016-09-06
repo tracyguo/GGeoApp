@@ -80,7 +80,7 @@ public class GSpreadsheetService {
 	 * @return an authorized Credential object.
 	 * @throws IOException
 	 */
-	public static Credential authorize_drive() throws IOException {
+	public static Credential authorizeDrive() throws IOException {
 		// Load client secrets.
 		InputStream in = GSpreadsheetService.class.getResourceAsStream("/client_secret.json");
 		GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
@@ -99,7 +99,7 @@ public class GSpreadsheetService {
 	 * @throws IOException
 	 */
 	public static Drive getDriveService() throws IOException {
-		credential = authorize_drive();
+		credential = authorizeDrive();
 		return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build();
 	}
 
