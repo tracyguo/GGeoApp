@@ -18,6 +18,7 @@ public class ConfigLoader {
 	private ConfigLoader() {
 		InputStream inputStream = null;
 		try {
+			// Load the properties from config.properties file
 			String propFileName = "config.properties";
 			inputStream = this.getClass().getClassLoader().getResourceAsStream(propFileName);
 			System.out.println("*****Reading properties from file*****");

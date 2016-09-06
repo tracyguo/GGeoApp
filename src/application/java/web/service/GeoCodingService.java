@@ -20,13 +20,20 @@ import application.java.web.model.GAddress;
 
 public class GeoCodingService {
 
+	/**
+	 * Get the coordinates based on the full address
+	 * 
+	 * @param fullAddress
+	 *            The full address to be checked
+	 * @return GAddress with coordinates information
+	 */
 	public GAddress getCoordinates(String fullAddress) {
 
 		URL url;
 		try {
 			String geoURL = ConfigLoader.getInstance().getProperty("geo_url");
 			String geoKey = ConfigLoader.getInstance().getProperty("geo_key");
-			
+
 			url = new URL(geoURL + "?address=" + URLEncoder.encode(fullAddress, "UTF-8") + "&key=" + geoKey);
 
 			// read from the URL
@@ -43,7 +50,7 @@ public class GeoCodingService {
 				return null;
 			}
 
-			// get the first result
+			// get the result
 			JSONObject res = obj.getJSONArray("results").getJSONObject(0);
 			String formattedAddress = res.getString("formatted_address");
 			JSONObject loc = res.getJSONObject("geometry").getJSONObject("location");
@@ -51,6 +58,7 @@ public class GeoCodingService {
 			Double lng = loc.getDouble("lng");
 			System.out.println("formattedAddress=" + formattedAddress + ", lat=" + lat + ", lng=" + lng);
 
+			// set coordinates data into GAddress
 			GAddress address = new GAddress();
 			address.setFormattedAddress(formattedAddress);
 			address.setLat(lat);

@@ -73,32 +73,24 @@ public class GSpreadsheetService {
 			System.exit(1);
 		}
 	}
-	
-    /**
-     * Creates an authorized Credential object.
-     * @return an authorized Credential object.
-     * @throws IOException
-     */
-    public static Credential authorize_drive() throws IOException {
-        // Load client secrets.
-        InputStream in =
-        		GSpreadsheetService.class.getResourceAsStream("/client_secret.json");
-        GoogleClientSecrets clientSecrets =
-            GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
-        // Build flow and trigger user authorization request.
-        GoogleAuthorizationCodeFlow flow =
-                new GoogleAuthorizationCodeFlow.Builder(
-                        HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, DRIVE_SCOPES)
-                .setDataStoreFactory(DATA_STORE_FACTORY)
-                .setAccessType("offline")
-                .build();
-        Credential credential = new AuthorizationCodeInstalledApp(
-            flow, new LocalServerReceiver()).authorize("user");
-        System.out.println(
-                "Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
-        return credential;
-    }
+	/**
+	 * Creates an authorized Credential object.
+	 * 
+	 * @return an authorized Credential object.
+	 * @throws IOException
+	 */
+	public static Credential authorize_drive() throws IOException {
+		// Load client secrets.
+		InputStream in = GSpreadsheetService.class.getResourceAsStream("/client_secret.json");
+		GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+
+		// Build flow and trigger user authorization request.
+		GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY,
+				clientSecrets, DRIVE_SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).setAccessType("offline").build();
+		Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
+		return credential;
+	}
 
 	/**
 	 * Build and return an authorized Drive client service.
@@ -110,7 +102,7 @@ public class GSpreadsheetService {
 		credential = authorize_drive();
 		return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build();
 	}
-	
+
 	/**
 	 * Build and return an authorized Sheets API client service.
 	 * 
@@ -122,7 +114,11 @@ public class GSpreadsheetService {
 				.build();
 	}
 
-
+	/**
+	 * Get the map between spreadsheet column to index
+	 * 
+	 * @return the sheet column to index map
+	 */
 	public static Map<String, Integer> getSheetColumnToIndexMap() {
 		Map<String, Integer> sheetColumnToIndexMap = new HashMap<String, Integer>();
 		sheetColumnToIndexMap.put("streetaddress",
@@ -134,10 +130,18 @@ public class GSpreadsheetService {
 		return sheetColumnToIndexMap;
 	}
 
+	/**
+	 * Read the spreadsheet and process the input information
+	 * 
+	 * @param spreadsheetId
+	 *            The ID of the spreadsheet
+	 * @param range
+	 *            The range of data to be read
+	 * @return list of GAddress data
+	 */
 	public List<GAddress> readSpreadsheet(String spreadsheetId, String range) {
 		try {
-
-			// String range = "Sheet1!A2:F";
+			// get spreadsheet data
 			ValueRange response = service.spreadsheets().values().get(spreadsheetId, range).execute();
 			List<List<Object>> values = response.getValues();
 
@@ -147,10 +151,12 @@ public class GSpreadsheetService {
 			} else {
 				List<GAddress> addressList = new ArrayList<GAddress>();
 
+				// get the map between column and index
 				Map<String, Integer> sheetColumnToIndexMap = getSheetColumnToIndexMap();
 				System.out.println("*****Reading spreadsheet*****");
 
 				for (List<Object> row : values) {
+					// set GAddress data and put into address list
 					GAddress gAddress = new GAddress();
 					gAddress.setStreetAddress(row.get(sheetColumnToIndexMap.get("streetaddress")).toString());
 					gAddress.setCity(row.get(sheetColumnToIndexMap.get("city")).toString());
@@ -178,14 +184,25 @@ public class GSpreadsheetService {
 		}
 	}
 
+	/**
+	 * Update the spreadsheet with the data provided
+	 * 
+	 * @param spreadsheetId
+	 *            The ID of the spreadsheet to be updated
+	 * @param dataList
+	 *            The list of data to be updated
+	 * @param range
+	 *            The range of spreadsheet to be updated
+	 */
 	public void updateSpreadsheet(String spreadsheetId, List<List<Object>> dataList, String range) {
 		try {
 			System.out.println("*****Updating spreadsheet*****");
+
+			// update the spreadsheet with provided data
 			BatchUpdateValuesRequest batchRequest = new BatchUpdateValuesRequest();
 			batchRequest.setValueInputOption("RAW");
 			ValueRange valueRange = new ValueRange();
 			valueRange.setRange(range);
-			// valueRange.setRange("Sheet1!G2:I");
 			valueRange.setValues(dataList);
 			List<ValueRange> valueRangeList = new ArrayList<ValueRange>();
 			valueRangeList.add(valueRange);
@@ -200,19 +217,31 @@ public class GSpreadsheetService {
 		}
 	}
 
+	/**
+	 * Create the spreadsheet with the data provided
+	 * 
+	 * @param spreadsheetName
+	 *            The name of the spreadsheet to be created
+	 * @param dataList
+	 *            The data of the spreadsheet to be created
+	 * @return the newly created spreadsheet ID
+	 */
 	public String createSpreadsheetWithValue(String spreadsheetName, List<List<Object>> dataList) {
 		try {
 			Spreadsheet newSpreadsheet = new Spreadsheet();
 
+			// create the spreadsheet
 			SpreadsheetProperties properties = new SpreadsheetProperties();
 			properties.setTitle(spreadsheetName);
 			newSpreadsheet.setProperties(properties);
 			Spreadsheet spreadsheet = service.spreadsheets().create(newSpreadsheet).execute();
 			System.out.println("theResponse=" + spreadsheet);
 
+			// set permission for the spreadsheet
 			String spreadsheetId = spreadsheet.getSpreadsheetId();
 			insertPermission(drive_service, spreadsheetId);
 
+			// set data to the spreadsheet
 			GSpreadsheetService sheetService = new GSpreadsheetService();
 			sheetService.updateSpreadsheet(spreadsheetId, dataList, "Sheet1");
 			return spreadsheetId;
@@ -227,7 +256,17 @@ public class GSpreadsheetService {
 
 	}
 
+	/**
+	 * Set Google Drive permission
+	 * 
+	 * @param service
+	 *            Google Drive service
+	 * @param fileId
+	 *            The ID of the spreadsheet
+	 * @return google drive permission
+	 */
 	private Permission insertPermission(Drive service, String fileId) throws Exception {
+		// set permission for the file
 		Permission newPermission = new Permission();
 		newPermission.setType("anyone");
 		newPermission.setRole("reader");

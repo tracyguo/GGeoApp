@@ -21,24 +21,26 @@ import application.java.config.ConfigLoader;
 import application.java.web.service.GAddressProcessorService;
 import au.com.bytecode.opencsv.CSVReader;
 
-
 @Controller
 public class GGeoController {
 
 	@RequestMapping(value = "/upload", method = RequestMethod.GET)
 	public void getFile(ModelMap model) {
-		model.addAttribute("sampleSpreadSheetURL", ConfigLoader.getInstance().getProperty("spreadsheet_base_url")+ConfigLoader.getInstance().getProperty("spreadsheet_id"));
+		model.addAttribute("sampleSpreadSheetURL", ConfigLoader.getInstance().getProperty("spreadsheet_base_url")
+				+ ConfigLoader.getInstance().getProperty("spreadsheet_id"));
 		System.out.println("In GGeopApp");
 	}
 
+	// The handler for processing the uploaded file
 	@RequestMapping(value = "/submit", method = RequestMethod.POST)
 	public String uploadFileHandler(@RequestParam("file") MultipartFile file, ModelMap model) {
 		System.out.println("File Submitted");
 
 		try {
 			if (!file.isEmpty()) {
+				// read the content of the uploaded file and put in data list
 				List<List<Object>> dataList = new ArrayList<List<Object>>();
-				String[] nextLine; 
+				String[] nextLine;
 				CSVReader reader = new CSVReader(new InputStreamReader(file.getInputStream()));
 				while ((nextLine = reader.readNext()) != null) {
 					ArrayList<Object> list = new ArrayList<Object>();
@@ -47,13 +49,22 @@ public class GGeoController {
 					}
 					dataList.add(list);
 				}
-			    reader.close();
-				String spreadsheetId = GAddressProcessorService.processUploadedFile(file.getOriginalFilename(), dataList);
-				model.addAttribute("spreadsheetURL", ConfigLoader.getInstance().getProperty("spreadsheet_base_url")+spreadsheetId);
-				if(spreadsheetId == null){
+				reader.close();
+
+				String fileName = file.getOriginalFilename();
+				int pos = fileName.lastIndexOf(".");
+				if (pos > 0) {
+					fileName = fileName.substring(0, pos);
+				}
+
+				// process the uploaded file
+				String spreadsheetId = GAddressProcessorService.processUploadedFile(fileName, dataList);
+				model.addAttribute("spreadsheetURL",
+						ConfigLoader.getInstance().getProperty("spreadsheet_base_url") + spreadsheetId);
+				if (spreadsheetId == null) {
 					return "error";
 				}
-			}else {
+			} else {
 				return "error";
 			}
 
@@ -64,6 +75,5 @@ public class GGeoController {
 
 		return "success";
 	}
-
 
 }
